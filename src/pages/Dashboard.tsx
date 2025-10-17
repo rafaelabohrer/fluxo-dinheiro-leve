@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plus, LogOut, TrendingUp, Settings } from "lucide-react";
+import { Plus, LogOut, TrendingUp, Settings, Calendar } from "lucide-react";
 import TransactionList from "@/components/TransactionList";
 import TransactionModal from "@/components/TransactionModal";
 import BalanceSummary from "@/components/BalanceSummary";
@@ -70,6 +70,13 @@ const Dashboard = () => {
               <h1 className="text-2xl font-bold">Fluxo</h1>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate("/calendar")}
+              >
+                <Calendar className="h-5 w-5" />
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
