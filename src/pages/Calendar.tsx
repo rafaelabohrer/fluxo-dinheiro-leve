@@ -15,6 +15,9 @@ interface Transaction {
   amount: number;
   type: "income" | "expense";
   date: string;
+  status: "completed" | "pending";
+  is_recurring: boolean;
+  recurrence_day: number | null;
   categories: {
     name: string;
     icon: string;
@@ -213,8 +216,8 @@ const CalendarPage = () => {
                         key={transaction.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-full ${
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className={`h-10 w-10 rounded-full flex-shrink-0 ${
                             transaction.type === "income" 
                               ? "bg-success/10" 
                               : "bg-destructive/10"
@@ -227,18 +230,30 @@ const CalendarPage = () => {
                               {transaction.categories?.icon || "category"}
                             </span>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">
-                              {transaction.categories?.name || "Sem categoria"}
-                            </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-sm">
+                                {transaction.categories?.name || "Sem categoria"}
+                              </p>
+                              {transaction.is_recurring && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                  Recorrente
+                                </span>
+                              )}
+                              {transaction.status === "pending" && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 flex-shrink-0">
+                                  Futura
+                                </span>
+                              )}
+                            </div>
                             {transaction.description && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground truncate">
                                 {transaction.description}
                               </p>
                             )}
                           </div>
                         </div>
-                        <p className={`font-bold ${
+                        <p className={`font-bold flex-shrink-0 ml-2 ${
                           transaction.type === "income" 
                             ? "text-success" 
                             : "text-destructive"

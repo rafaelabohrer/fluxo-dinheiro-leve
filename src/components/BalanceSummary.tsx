@@ -10,11 +10,32 @@ const BalanceSummary = () => {
 
   useEffect(() => {
     fetchMonthlyData();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('balance-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions'
+        },
+        () => {
+          fetchMonthlyData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchMonthlyData = async () => {
     try {
       const now = new Date();
+      const today = now.toISOString().split('T')[0];
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
@@ -23,20 +44,25 @@ const BalanceSummary = () => {
 
       const { data: transactions, error } = await supabase
         .from("transactions")
-        .select("amount, type")
+        .select("amount, type, date, status")
         .eq("user_id", user.user.id)
         .gte("date", firstDay.toISOString().split('T')[0])
         .lte("date", lastDay.toISOString().split('T')[0]);
 
       if (error) throw error;
 
-      const totalIncome = transactions
-        ?.filter(t => t.type === "income")
-        .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      // Only count completed transactions OR transactions with date <= today
+      const validTransactions = transactions?.filter(t => 
+        t.status === "completed" || t.date <= today
+      ) || [];
 
-      const totalExpenses = transactions
-        ?.filter(t => t.type === "expense")
-        .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      const totalIncome = validTransactions
+        .filter(t => t.type === "income")
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const totalExpenses = validTransactions
+        .filter(t => t.type === "expense")
+        .reduce((sum, t) => sum + Number(t.amount), 0);
 
       setIncome(totalIncome);
       setExpenses(totalExpenses);

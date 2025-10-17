@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Category {
   id: number;
@@ -40,6 +41,8 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceDay, setRecurrenceDay] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -50,6 +53,8 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
         setAmount(Math.abs(transaction.amount).toString());
         setDescription(transaction.description || "");
         setDate(transaction.date);
+        setIsRecurring((transaction as any).is_recurring || false);
+        setRecurrenceDay((transaction as any).recurrence_day?.toString() || "");
       }
     } else {
       // Reset form
@@ -58,6 +63,8 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
       setAmount("");
       setDescription("");
       setDate(new Date().toISOString().split('T')[0]);
+      setIsRecurring(false);
+      setRecurrenceDay("");
     }
   }, [open, transaction]);
 
@@ -93,6 +100,13 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("User not authenticated");
 
+      const selectedDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      const status = selectedDate > today ? "pending" : "completed";
+
       const transactionData = {
         user_id: user.user.id,
         type,
@@ -100,6 +114,9 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
         amount: parseFloat(amount),
         description: description.trim() || null,
         date,
+        is_recurring: isRecurring,
+        recurrence_day: isRecurring && recurrenceDay ? parseInt(recurrenceDay) : null,
+        status,
       };
 
       if (transaction) {
@@ -204,6 +221,42 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
               disabled={loading}
               required
             />
+          </div>
+
+          <div className="space-y-4 border-t pt-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="recurring"
+                checked={isRecurring}
+                onCheckedChange={(checked) => {
+                  setIsRecurring(checked as boolean);
+                  if (!checked) setRecurrenceDay("");
+                }}
+                disabled={loading}
+              />
+              <Label htmlFor="recurring" className="font-normal cursor-pointer">
+                Transação recorrente mensal
+              </Label>
+            </div>
+
+            {isRecurring && (
+              <div className="space-y-2 pl-6">
+                <Label htmlFor="recurrence-day">Dia do mês (1-31)</Label>
+                <Input
+                  id="recurrence-day"
+                  type="number"
+                  min="1"
+                  max="31"
+                  placeholder="Ex: 5 (todo dia 5)"
+                  value={recurrenceDay}
+                  onChange={(e) => setRecurrenceDay(e.target.value)}
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Esta transação será registrada automaticamente todo mês no dia especificado
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">

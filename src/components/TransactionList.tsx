@@ -15,6 +15,9 @@ interface Transaction {
   type: "income" | "expense";
   date: string;
   category_id: number | null;
+  status: "completed" | "pending";
+  is_recurring: boolean;
+  recurrence_day: number | null;
   categories: {
     name: string;
     icon: string;
@@ -72,6 +75,7 @@ const TransactionList = () => {
         .eq("user_id", user.user.id)
         .gte("date", firstDay.toISOString().split('T')[0])
         .lte("date", lastDay.toISOString().split('T')[0])
+        .order("status", { ascending: false })
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -168,9 +172,21 @@ const TransactionList = () => {
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold">
-                      {transaction.categories?.name || "Sem categoria"}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">
+                        {transaction.categories?.name || "Sem categoria"}
+                      </p>
+                      {transaction.is_recurring && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          Recorrente
+                        </span>
+                      )}
+                      {transaction.status === "pending" && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
+                          Futura
+                        </span>
+                      )}
+                    </div>
                     {transaction.description && (
                       <p className="text-sm text-muted-foreground">
                         {transaction.description}
@@ -178,6 +194,9 @@ const TransactionList = () => {
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
                       {format(new Date(transaction.date), "d 'de' MMMM", { locale: ptBR })}
+                      {transaction.is_recurring && transaction.recurrence_day && (
+                        <span className="ml-1">(Todo dia {transaction.recurrence_day})</span>
+                      )}
                     </p>
                   </div>
                 </div>
