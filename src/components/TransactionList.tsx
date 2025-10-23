@@ -146,81 +146,109 @@ const TransactionList = () => {
     );
   }
 
+  // Group transactions by date
+  const groupedTransactions = transactions.reduce((groups, transaction) => {
+    const date = transaction.date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(transaction);
+    return groups;
+  }, {} as Record<string, Transaction[]>);
+
+  // Sort dates in descending order
+  const sortedDates = Object.keys(groupedTransactions).sort((a, b) => 
+    new Date(b).getTime() - new Date(a).getTime()
+  );
+
   return (
     <>
-      <div className="space-y-3">
-        {transactions.map((transaction) => (
-          <Card
-            key={transaction.id}
-            className="cursor-pointer transition-smooth hover:shadow-md"
-            onClick={() => handleTransactionClick(transaction)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`h-12 w-12 rounded-full ${
-                    transaction.type === "income" 
-                      ? "bg-success/10" 
-                      : "bg-destructive/10"
-                  } flex items-center justify-center`}>
-                    <span className="material-icons text-xl" style={{
-                      color: transaction.type === "income" 
-                        ? "hsl(var(--success))" 
-                        : "hsl(var(--destructive))"
-                    }}>
-                      {transaction.categories?.icon || "category"}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">
-                        {transaction.categories?.name || "Sem categoria"}
-                      </p>
-                      {transaction.is_recurring && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          Recorrente
-                        </span>
-                      )}
-                      {transaction.status === "pending" && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
-                          Futura
-                        </span>
-                      )}
+      <div className="space-y-6">
+        {sortedDates.map((date) => (
+          <div key={date}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-px bg-border flex-1" />
+              <p className="text-sm font-medium text-muted-foreground px-3">
+                {format(new Date(date), "EEEE, d 'de' MMMM", { locale: ptBR })}
+              </p>
+              <div className="h-px bg-border flex-1" />
+            </div>
+            
+            <div className="space-y-3">
+              {groupedTransactions[date].map((transaction) => (
+                <Card
+                  key={transaction.id}
+                  className="cursor-pointer transition-smooth hover:shadow-md"
+                  onClick={() => handleTransactionClick(transaction)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-12 w-12 rounded-full ${
+                          transaction.type === "income" 
+                            ? "bg-success/10" 
+                            : "bg-destructive/10"
+                        } flex items-center justify-center`}>
+                          <span className="material-icons text-xl" style={{
+                            color: transaction.type === "income" 
+                              ? "hsl(var(--success))" 
+                              : "hsl(var(--destructive))"
+                          }}>
+                            {transaction.categories?.icon || "category"}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">
+                              {transaction.categories?.name || "Sem categoria"}
+                            </p>
+                            {transaction.is_recurring && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                Recorrente
+                              </span>
+                            )}
+                            {transaction.status === "pending" && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
+                                Futura
+                              </span>
+                            )}
+                          </div>
+                          {transaction.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {transaction.description}
+                            </p>
+                          )}
+                          {transaction.is_recurring && transaction.recurrence_day && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Todo dia {transaction.recurrence_day}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-lg font-bold ${
+                          transaction.type === "income" 
+                            ? "text-success" 
+                            : "text-destructive"
+                        }`}>
+                          {transaction.type === "income" ? "+" : "-"}
+                          {formatCurrency(Math.abs(transaction.amount))}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={(e) => handleDelete(transaction.id, e)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    {transaction.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {transaction.description}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {format(new Date(transaction.date), "d 'de' MMMM", { locale: ptBR })}
-                      {transaction.is_recurring && transaction.recurrence_day && (
-                        <span className="ml-1">(Todo dia {transaction.recurrence_day})</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className={`text-lg font-bold ${
-                    transaction.type === "income" 
-                      ? "text-success" 
-                      : "text-destructive"
-                  }`}>
-                    {transaction.type === "income" ? "+" : "-"}
-                    {formatCurrency(Math.abs(transaction.amount))}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={(e) => handleDelete(transaction.id, e)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 

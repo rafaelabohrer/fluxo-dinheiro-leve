@@ -218,9 +218,14 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              disabled={loading}
+              disabled={loading || isRecurring}
               required
             />
+            {isRecurring && (
+              <p className="text-xs text-muted-foreground">
+                Para transações recorrentes, a data será calculada automaticamente
+              </p>
+            )}
           </div>
 
           <div className="space-y-4 border-t pt-4">

@@ -8,6 +8,7 @@ import { Plus, LogOut, TrendingUp, Settings, Calendar } from "lucide-react";
 import TransactionList from "@/components/TransactionList";
 import TransactionModal from "@/components/TransactionModal";
 import BalanceSummary from "@/components/BalanceSummary";
+import PendingSummary from "@/components/PendingSummary";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -95,6 +96,8 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 max-w-4xl">
         <BalanceSummary />
+        
+        <PendingSummary />
 
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold">Transações</h2>
