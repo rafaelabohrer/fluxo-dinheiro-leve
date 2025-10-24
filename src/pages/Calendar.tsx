@@ -105,18 +105,29 @@ const CalendarPage = () => {
           const recurrenceDay = recurring.recurrence_day;
           if (recurrenceDay) {
             const recurringDate = new Date(now.getFullYear(), now.getMonth(), recurrenceDay);
-            // Check if this specific occurrence already exists
-            const alreadyExists = regularData?.some(t => 
-              t.id === recurring.id && 
-              isSameDay(new Date(t.date), recurringDate)
-            );
             
-            if (!alreadyExists) {
-              // Add a virtual instance of the recurring transaction for this month
-              allTransactions.push({
-                ...recurring,
-                date: recurringDate.toISOString().split('T')[0]
-              });
+            // Only add if within this month's range
+            if (recurringDate >= firstDay && recurringDate <= lastDay) {
+              // Check if this specific occurrence already exists
+              const alreadyExists = regularData?.some(t => 
+                t.id === recurring.id && 
+                isSameDay(new Date(t.date), recurringDate)
+              );
+              
+              if (!alreadyExists) {
+                // Calculate status for this occurrence
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                recurringDate.setHours(0, 0, 0, 0);
+                const status = recurringDate > today ? "pending" : "completed";
+                
+                // Add a virtual instance of the recurring transaction for this month
+                allTransactions.push({
+                  ...recurring,
+                  date: recurringDate.toISOString().split('T')[0],
+                  status,
+                });
+              }
             }
           }
         });

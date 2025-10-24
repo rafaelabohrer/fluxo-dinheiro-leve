@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Upload, X, FileText, Download } from "lucide-react";
+import { Loader2, Upload, X, FileText, Download, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import AttachmentViewer from "./AttachmentViewer";
 
 interface Category {
   id: number;
@@ -48,6 +49,8 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [attachmentMonth, setAttachmentMonth] = useState<string>("");
   const [attachmentYear, setAttachmentYear] = useState<string>("");
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewingAttachment, setViewingAttachment] = useState<any>(null);
 
   useEffect(() => {
     if (open) {
@@ -230,6 +233,26 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
     }
   };
 
+  const handleViewAttachment = async (attachment: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("transaction-attachments")
+        .download(attachment.file_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      setViewingAttachment({
+        ...attachment,
+        url,
+      });
+      setViewerOpen(true);
+    } catch (error: any) {
+      console.error("Error viewing attachment:", error);
+      toast.error("Erro ao visualizar comprovante");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -244,12 +267,29 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("User not authenticated");
 
-      const selectedDate = new Date(date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      selectedDate.setHours(0, 0, 0, 0);
-      
-      const status = selectedDate > today ? "pending" : "completed";
+      let transactionDate = date;
+      let status: "completed" | "pending" = "completed";
+
+      // For recurring transactions, calculate the date based on recurrence_day
+      if (isRecurring && recurrenceDay) {
+        const now = new Date();
+        const recurDay = parseInt(recurrenceDay);
+        transactionDate = new Date(now.getFullYear(), now.getMonth(), recurDay).toISOString().split('T')[0];
+        
+        // Check if this occurrence is in the future
+        const transactionDateTime = new Date(transactionDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        transactionDateTime.setHours(0, 0, 0, 0);
+        status = transactionDateTime > today ? "pending" : "completed";
+      } else {
+        // For non-recurring transactions, check if date is in the future
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        selectedDate.setHours(0, 0, 0, 0);
+        status = selectedDate > today ? "pending" : "completed";
+      }
 
       const transactionData = {
         user_id: user.user.id,
@@ -257,7 +297,7 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
         category_id: categoryId ? parseInt(categoryId) : null,
         amount: parseFloat(amount),
         description: description.trim() || null,
-        date,
+        date: transactionDate,
         is_recurring: isRecurring,
         recurrence_day: isRecurring && recurrenceDay ? parseInt(recurrenceDay) : null,
         status,
@@ -435,6 +475,16 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
+                          onClick={() => handleViewAttachment(attachment)}
+                          disabled={loading}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => handleDownloadAttachment(attachment.file_path, attachment.file_name)}
                           disabled={loading}
                         >
@@ -552,6 +602,17 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
         </form>
         </ScrollArea>
       </DialogContent>
+      
+      {viewingAttachment && (
+        <AttachmentViewer
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          fileUrl={viewingAttachment.url}
+          fileName={viewingAttachment.file_name}
+          fileType={viewingAttachment.file_type}
+          onDownload={() => handleDownloadAttachment(viewingAttachment.file_path, viewingAttachment.file_name)}
+        />
+      )}
     </Dialog>
   );
 };
