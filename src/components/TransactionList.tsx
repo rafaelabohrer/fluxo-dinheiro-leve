@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TransactionModal from "./TransactionModal";
-import { Trash2 } from "lucide-react";
+import { Trash2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ interface Transaction {
   status: "completed" | "pending";
   is_recurring: boolean;
   recurrence_day: number | null;
+  attachment_count?: number;
   categories: {
     name: string;
     icon: string;
@@ -80,7 +81,23 @@ const TransactionList = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setTransactions((data || []) as Transaction[]);
+
+      // Fetch attachment counts for each transaction
+      const transactionsWithAttachments = await Promise.all(
+        (data || []).map(async (transaction) => {
+          const { count } = await supabase
+            .from("transaction_attachments")
+            .select("*", { count: "exact", head: true })
+            .eq("transaction_id", transaction.id);
+          
+          return {
+            ...transaction,
+            attachment_count: count || 0,
+          };
+        })
+      );
+
+      setTransactions(transactionsWithAttachments as Transaction[]);
     } catch (error) {
       console.error("Error fetching transactions:", error);
       toast.error("Erro ao carregar transações");
@@ -202,6 +219,12 @@ const TransactionList = () => {
                             <p className="font-semibold">
                               {transaction.categories?.name || "Sem categoria"}
                             </p>
+                            {transaction.attachment_count > 0 && (
+                              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
+                                <Paperclip className="h-3 w-3" />
+                                {transaction.attachment_count}
+                              </span>
+                            )}
                             {transaction.is_recurring && (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                                 Recorrente

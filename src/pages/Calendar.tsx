@@ -63,7 +63,8 @@ const CalendarPage = () => {
       const firstDay = startOfMonth(now);
       const lastDay = endOfMonth(now);
 
-      const { data, error } = await supabase
+      // Fetch regular transactions for the month
+      const { data: regularData, error: regularError } = await supabase
         .from("transactions")
         .select(`
           *,
@@ -77,8 +78,51 @@ const CalendarPage = () => {
         .lte("date", lastDay.toISOString().split('T')[0])
         .order("date", { ascending: false });
 
-      if (error) throw error;
-      setTransactions((data || []) as Transaction[]);
+      if (regularError) throw regularError;
+
+      // Fetch recurring transactions (they appear every month on their recurrence_day)
+      const { data: recurringData, error: recurringError } = await supabase
+        .from("transactions")
+        .select(`
+          *,
+          categories (
+            name,
+            icon
+          )
+        `)
+        .eq("user_id", user.user.id)
+        .eq("is_recurring", true)
+        .not("recurrence_day", "is", null);
+
+      if (recurringError) throw recurringError;
+
+      // Combine transactions
+      const allTransactions = [...(regularData || [])];
+      
+      // Add recurring transactions for this month
+      if (recurringData && recurringData.length > 0) {
+        recurringData.forEach((recurring) => {
+          const recurrenceDay = recurring.recurrence_day;
+          if (recurrenceDay) {
+            const recurringDate = new Date(now.getFullYear(), now.getMonth(), recurrenceDay);
+            // Check if this specific occurrence already exists
+            const alreadyExists = regularData?.some(t => 
+              t.id === recurring.id && 
+              isSameDay(new Date(t.date), recurringDate)
+            );
+            
+            if (!alreadyExists) {
+              // Add a virtual instance of the recurring transaction for this month
+              allTransactions.push({
+                ...recurring,
+                date: recurringDate.toISOString().split('T')[0]
+              });
+            }
+          }
+        });
+      }
+
+      setTransactions(allTransactions as Transaction[]);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
