@@ -13,19 +13,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import AttachmentViewer from "./AttachmentViewer";
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   icon: string;
   type: "income" | "expense";
 }
 
 interface Transaction {
-  id: number;
+  id: string;
   description: string;
   amount: number;
   type: "income" | "expense";
   date: string;
-  category_id: number | null;
+  category_id: string | null;
 }
 
 interface TransactionModalProps {
@@ -102,12 +102,12 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
     }
   };
 
-  const fetchAttachments = async (transactionId: number) => {
+  const fetchAttachments = async (transactionId: string) => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("transaction_attachments")
         .select("*")
         .eq("transaction_id", transactionId)
@@ -155,7 +155,7 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
       if (uploadError) throw uploadError;
 
       // Save attachment record
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from("transaction_attachments")
         .insert({
           user_id: user.user.id,
@@ -181,7 +181,7 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
     }
   };
 
-  const handleDeleteAttachment = async (attachmentId: number, filePath: string) => {
+  const handleDeleteAttachment = async (attachmentId: string, filePath: string) => {
     setLoading(true);
     try {
       // Delete from storage
@@ -192,7 +192,7 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
       if (storageError) throw storageError;
 
       // Delete from database
-      const { error: dbError } = await supabase
+      const { error: dbError } = await (supabase as any)
         .from("transaction_attachments")
         .delete()
         .eq("id", attachmentId);
@@ -294,7 +294,7 @@ const TransactionModal = ({ open, onOpenChange, transaction, onClose }: Transact
       const transactionData = {
         user_id: user.user.id,
         type,
-        category_id: categoryId ? parseInt(categoryId) : null,
+        category_id: categoryId || null,
         amount: parseFloat(amount),
         description: description.trim() || null,
         date: transactionDate,

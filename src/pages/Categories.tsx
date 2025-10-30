@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Pencil, Trash2, TrendingUp } from "lucide-react";
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   icon: string;
   type: "income" | "expense";
@@ -130,7 +130,7 @@ const Categories = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Deseja realmente excluir esta categoria?")) return;
 
     try {

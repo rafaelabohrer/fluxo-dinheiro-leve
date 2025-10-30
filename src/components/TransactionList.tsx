@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface Transaction {
-  id: number;
+  id: string;
   description: string;
   amount: number;
   type: "income" | "expense";
   date: string;
-  category_id: number | null;
+  category_id: string | null;
   status: "completed" | "pending";
   is_recurring: boolean;
   recurrence_day: number | null;
@@ -85,7 +85,7 @@ const TransactionList = () => {
       // Fetch attachment counts for each transaction
       const transactionsWithAttachments = await Promise.all(
         (data || []).map(async (transaction) => {
-          const { count } = await supabase
+          const { count } = await (supabase as any)
             .from("transaction_attachments")
             .select("*", { count: "exact", head: true })
             .eq("transaction_id", transaction.id);
@@ -106,7 +106,7 @@ const TransactionList = () => {
     }
   };
 
-  const handleDelete = async (id: number, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!confirm("Deseja realmente excluir esta transação?")) return;

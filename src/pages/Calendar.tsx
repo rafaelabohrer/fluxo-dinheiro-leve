@@ -10,7 +10,7 @@ import { ptBR } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Transaction {
-  id: number;
+  id: string;
   description: string;
   amount: number;
   type: "income" | "expense";
