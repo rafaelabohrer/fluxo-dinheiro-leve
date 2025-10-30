@@ -18,143 +18,73 @@ export type Database = {
         Row: {
           created_at: string
           icon: string
-          id: number
+          id: string
           name: string
           type: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          icon?: string
-          id?: number
+          icon: string
+          id?: string
           name: string
           type: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           icon?: string
-          id?: number
+          id?: string
           name?: string
           type?: string
+          updated_at?: string
           user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "categories_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          display_name: string | null
-          email: string
-          id: string
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string | null
-          email: string
-          id: string
-        }
-        Update: {
-          created_at?: string
-          display_name?: string | null
-          email?: string
-          id?: string
         }
         Relationships: []
-      }
-      transaction_attachments: {
-        Row: {
-          attachment_month: number | null
-          attachment_year: number | null
-          created_at: string
-          file_name: string
-          file_path: string
-          file_size: number
-          file_type: string
-          id: number
-          transaction_id: number
-          user_id: string
-        }
-        Insert: {
-          attachment_month?: number | null
-          attachment_year?: number | null
-          created_at?: string
-          file_name: string
-          file_path: string
-          file_size: number
-          file_type: string
-          id?: never
-          transaction_id: number
-          user_id: string
-        }
-        Update: {
-          attachment_month?: number | null
-          attachment_year?: number | null
-          created_at?: string
-          file_name?: string
-          file_path?: string
-          file_size?: number
-          file_type?: string
-          id?: never
-          transaction_id?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transaction_attachments_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       transactions: {
         Row: {
           amount: number
-          category_id: number | null
+          category_id: string | null
           created_at: string
           date: string
-          description: string | null
-          id: number
+          description: string
+          id: string
           is_recurring: boolean
           recurrence_day: number | null
           status: string
           type: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           amount: number
-          category_id?: number | null
+          category_id?: string | null
           created_at?: string
-          date?: string
-          description?: string | null
-          id?: number
+          date: string
+          description: string
+          id?: string
           is_recurring?: boolean
           recurrence_day?: number | null
           status?: string
           type: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
-          category_id?: number | null
+          category_id?: string | null
           created_at?: string
           date?: string
-          description?: string | null
-          id?: number
+          description?: string
+          id?: string
           is_recurring?: boolean
           recurrence_day?: number | null
           status?: string
           type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -163,13 +93,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
